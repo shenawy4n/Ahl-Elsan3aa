@@ -1,0 +1,94 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email in ["ahmaadelshenawy@gmail.com", "shenawyjr@gmail.com"] ||
+        exists(/databases/$(database)/documents/admin_users/$(request.auth.uid))
+      );
+    }
+
+    function isValidCategory(data) {
+      return data.id is string && data.id.size() <= 64 &&
+             data.name is string && data.name.size() <= 100 &&
+             data.sort_order is number &&
+             data.status in ['active', 'hidden'];
+    }
+
+    function isValidArea(data) {
+      return data.id is string && data.id.size() <= 64 &&
+             data.name is string && data.name.size() <= 100 &&
+             data.status in ['active', 'hidden'];
+    }
+
+    function isValidExperience(data) {
+      return data.id is string && data.id.size() <= 64 &&
+             data.label is string && data.label.size() <= 100 &&
+             data.sort_order is number &&
+             data.status in ['active', 'hidden'];
+    }
+
+    function isValidProvider(data) {
+      return data.id is string && data.id.size() <= 64 &&
+             data.name is string && data.name.size() <= 150 &&
+             data.category_id is string && data.category_id.size() <= 64 &&
+             data.area_id is string && data.area_id.size() <= 64 &&
+             data.phone is string && data.phone.size() <= 20 &&
+             data.status in ['active', 'hidden', 'pending'];
+    }
+
+    function isValidReview(data) {
+      return data.id is string && data.id.size() <= 64 &&
+             data.provider_id is string && data.provider_id.size() <= 64 &&
+             data.rating is number && data.rating >= 1 && data.rating <= 5 &&
+             data.comment is string && data.comment.size() <= 1000 &&
+             data.status in ['approved', 'pending', 'rejected'];
+    }
+
+    match /categories/{categoryId} {
+      allow read, write: if true;
+    }
+
+    match /areas/{areaId} {
+      allow read, write: if true;
+    }
+
+    match /experience_options/{experienceId} {
+      allow read, write: if true;
+    }
+
+    match /providers/{providerId} {
+      allow read, write: if true;
+    }
+
+    match /reviews/{reviewId} {
+      allow read, write: if true;
+    }
+
+    match /admin_users/{adminId} {
+      allow read, write: if true;
+    }
+  }
+}
